@@ -136,39 +136,6 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/admin/database/backup', methods=['GET'])
-def backup_database():
-    """Create a database backup"""
-    try:
-        import sqlite3
-        import os
-        from datetime import datetime
-        
-        # Create backup filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_filename = f'database_backup_{timestamp}.db'
-        backup_path = os.path.join('/tmp', backup_filename)
-        
-        # Copy database
-        db_path = os.path.join(os.path.dirname(__file__), '..', 'database', 'app.db')
-        
-        # Connect to source and destination databases
-        source = sqlite3.connect(db_path)
-        dest = sqlite3.connect(backup_path)
-        
-        # Copy database
-        source.backup(dest)
-        
-        source.close()
-        dest.close()
-        
-        return jsonify({
-            'message': 'Database backup created successfully',
-            'backup_file': backup_filename,
-            'backup_path': backup_path
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @admin_bp.route('/admin/database/stats', methods=['GET'])
 def get_database_stats():
