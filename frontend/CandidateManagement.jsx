@@ -1,24 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button.jsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Badge } from '@/components/ui/badge.jsx'
-import { Input } from '@/components/ui/input.jsx'
-import { Label } from '@/components/ui/label.jsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog.jsx'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx'
-import { Plus, Search, Filter, Check, X, Eye, Edit, Trash2, Mail, Phone } from 'lucide-react'
+import { Plus, Search, Check, X, Eye, Trash2, Mail, Phone } from 'lucide-react'
 
 const CandidateManagement = ({ token, user }) => {
   const [candidates, setCandidates] = useState([])
   const [filteredCandidates, setFilteredCandidates] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [approvalFilter, setApprovalFilter] = useState('all')
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState(null)
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false)
 
   const [newCandidate, setNewCandidate] = useState({
     first_name: '',
@@ -26,7 +15,6 @@ const CandidateManagement = ({ token, user }) => {
     email: '',
     phone: '',
     pipeline_status: 'Applied',
-    resume_path: ''
   })
 
   useEffect(() => {
@@ -34,49 +22,30 @@ const CandidateManagement = ({ token, user }) => {
   }, [])
 
   useEffect(() => {
-    filterCandidates()
-  }, [candidates, searchTerm, statusFilter, approvalFilter])
+    let filtered = candidates.filter(candidate =>
+      `${candidate.first_name} ${candidate.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    setFilteredCandidates(filtered)
+  }, [candidates, searchTerm])
 
   const fetchCandidates = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/candidates', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
       setCandidates(data)
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching candidates:', error)
+    } finally {
       setLoading(false)
     }
   }
 
-  const filterCandidates = () => {
-    let filtered = candidates
-
-    if (searchTerm) {
-      filtered = filtered.filter(candidate =>
-        candidate.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(candidate => candidate.pipeline_status === statusFilter)
-    }
-
-    if (approvalFilter !== 'all') {
-      filtered = filtered.filter(candidate => candidate.admin_approval === approvalFilter)
-    }
-
-    setFilteredCandidates(filtered)
-  }
-
-  const handleAddCandidate = async () => {
+  const handleAddCandidate = async (e) => {
+    e.preventDefault()
     try {
       const response = await fetch('/api/candidates', {
         method: 'POST',
@@ -86,55 +55,14 @@ const CandidateManagement = ({ token, user }) => {
         },
         body: JSON.stringify(newCandidate),
       })
-
       if (response.ok) {
-        const candidate = await response.json()
-        setCandidates([...candidates, candidate])
-        setNewCandidate({
-          first_name: '',
-          last_name: '',
-          email: '',
-          phone: '',
-          pipeline_status: 'Applied',
-          resume_path: ''
-        })
         setShowAddDialog(false)
+        fetchCandidates() // Refresh list
+      } else {
+        alert('Failed to add candidate')
       }
     } catch (error) {
       console.error('Error adding candidate:', error)
-    }
-  }
-
-  const handleApproveCandidate = async (candidateId) => {
-    try {
-      const response = await fetch(`/api/candidates/${candidateId}/approve`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        const updatedCandidate = await response.json()
-        setCandidates(candidates.map(c => c.id === candidateId ? updatedCandidate : c))
-      }
-    } catch (error) {
-      console.error('Error approving candidate:', error)
-    }
-  }
-
-  const handleDenyCandidate = async (candidateId) => {
-    try {
-      const response = await fetch(`/api/candidates/${candidateId}/deny`, {
-        method: 'POST',
-      })
-
-      if (response.ok) {
-        const updatedCandidate = await response.json()
-        setCandidates(candidates.map(c => c.id === candidateId ? updatedCandidate : c))
-      }
-    } catch (error) {
-      console.error('Error denying candidate:', error)
     }
   }
 
@@ -142,361 +70,114 @@ const CandidateManagement = ({ token, user }) => {
     try {
       const response = await fetch(`/api/candidates/${candidateId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pipeline_status: newStatus }),
       })
-
       if (response.ok) {
-        const updatedCandidate = await response.json()
-        setCandidates(candidates.map(c => c.id === candidateId ? updatedCandidate : c))
+        fetchCandidates()
       }
     } catch (error) {
-      console.error('Error updating candidate status:', error)
+      console.error('Error updating status:', error)
     }
   }
 
   const handleDeleteCandidate = async (candidateId) => {
-    if (window.confirm('Are you sure you want to delete this candidate?')) {
+    if (window.confirm('Are you sure?')) {
       try {
-        const response = await fetch(`/api/candidates/${candidateId}`, {
-          method: 'DELETE',
-        })
-
-        if (response.ok) {
-          setCandidates(candidates.filter(c => c.id !== candidateId))
-        }
+        await fetch(`/api/candidates/${candidateId}`, { method: 'DELETE' })
+        fetchCandidates()
       } catch (error) {
         console.error('Error deleting candidate:', error)
       }
     }
   }
 
-  const getStatusBadge = (status) => {
-    const statusColors = {
-      'Applied': 'bg-blue-100 text-blue-800',
-      'Interviewing': 'bg-yellow-100 text-yellow-800',
-      'Offered': 'bg-purple-100 text-purple-800',
-      'Approved': 'bg-green-100 text-green-800',
-      'Denied': 'bg-red-100 text-red-800'
-    }
-    return statusColors[status] || 'bg-gray-100 text-gray-800'
-  }
-
-  const getApprovalBadge = (approval) => {
-    const approvalColors = {
-      'Approved': 'bg-green-100 text-green-800',
-      'Denied': 'bg-red-100 text-red-800',
-      'Pending': 'bg-orange-100 text-orange-800'
-    }
-    return approvalColors[approval] || 'bg-gray-100 text-gray-800'
-  }
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading candidates...</div>
-  }
+  if (loading) return <div>Loading candidates...</div>
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Candidate Management</h2>
-          <p className="text-gray-600">Track and manage potential hires through the recruitment pipeline</p>
-        </div>
-        
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Candidate
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add New Candidate</DialogTitle>
-              <DialogDescription>
-                Enter the candidate's information to add them to the pipeline.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={newCandidate.first_name}
-                    onChange={(e) => setNewCandidate({...newCandidate, first_name: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={newCandidate.last_name}
-                    onChange={(e) => setNewCandidate({...newCandidate, last_name: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newCandidate.email}
-                  onChange={(e) => setNewCandidate({...newCandidate, email: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newCandidate.phone}
-                  onChange={(e) => setNewCandidate({...newCandidate, phone: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Pipeline Status</Label>
-                <Select value={newCandidate.pipeline_status} onValueChange={(value) => setNewCandidate({...newCandidate, pipeline_status: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Applied">Applied</SelectItem>
-                    <SelectItem value="Interviewing">Interviewing</SelectItem>
-                    <SelectItem value="Offered">Offered</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleAddCandidate}>Add Candidate</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <div style={{ fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Candidate Management</h2>
+        <button onClick={() => setShowAddDialog(true)} style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>
+          <Plus size={16} style={{ display: 'inline-block', marginRight: '0.5rem' }} />
+          Add Candidate
+        </button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search candidates..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="text"
+          placeholder="Search candidates..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
+        />
+      </div>
+
+      {/* Add Candidate Dialog */}
+      {showAddDialog && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', width: '400px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Add New Candidate</h3>
+            <form onSubmit={handleAddCandidate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input placeholder="First Name" value={newCandidate.first_name} onChange={(e) => setNewCandidate({...newCandidate, first_name: e.target.value})} required style={{ padding: '0.5rem', border: '1px solid #d1d5db' }} />
+              <input placeholder="Last Name" value={newCandidate.last_name} onChange={(e) => setNewCandidate({...newCandidate, last_name: e.target.value})} required style={{ padding: '0.5rem', border: '1px solid #d1d5db' }} />
+              <input type="email" placeholder="Email" value={newCandidate.email} onChange={(e) => setNewCandidate({...newCandidate, email: e.target.value})} required style={{ padding: '0.5rem', border: '1px solid #d1d5db' }} />
+              <input placeholder="Phone" value={newCandidate.phone} onChange={(e) => setNewCandidate({...newCandidate, phone: e.target.value})} style={{ padding: '0.5rem', border: '1px solid #d1d5db' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setShowAddDialog(false)} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db' }}>Cancel</button>
+                <button type="submit" style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none' }}>Add</button>
               </div>
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Pipeline Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Applied">Applied</SelectItem>
-                <SelectItem value="Interviewing">Interviewing</SelectItem>
-                <SelectItem value="Offered">Offered</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Denied">Denied</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={approvalFilter} onValueChange={setApprovalFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Admin Approval" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Approvals</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Denied">Denied</SelectItem>
-              </SelectContent>
-            </Select>
+            </form>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
       {/* Candidates Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Candidates ({filteredCandidates.length})</CardTitle>
-          <CardDescription>
-            Manage candidate applications and track their progress through the hiring pipeline
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Pipeline Status</TableHead>
-                <TableHead>Admin Approval</TableHead>
-                <TableHead>Indeed Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCandidates.map((candidate) => (
-                <TableRow key={candidate.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{candidate.first_name} {candidate.last_name}</div>
-                      <div className="text-sm text-gray-500">ID: {candidate.id}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Mail className="h-3 w-3" />
-                        {candidate.email}
-                      </div>
-                      {candidate.phone && (
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <Phone className="h-3 w-3" />
-                          {candidate.phone}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Select value={candidate.pipeline_status} onValueChange={(value) => handleUpdateStatus(candidate.id, value)}>
-                      <SelectTrigger className="w-[130px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Applied">Applied</SelectItem>
-                        <SelectItem value="Interviewing">Interviewing</SelectItem>
-                        <SelectItem value="Offered">Offered</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getApprovalBadge(candidate.admin_approval)}>
-                      {candidate.admin_approval}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {candidate.indeed_status ? (
-                      <Badge variant="outline">{candidate.indeed_status}</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {candidate.admin_approval === 'Pending' && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleApproveCandidate(candidate.id)}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDenyCandidate(candidate.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedCandidate(candidate)
-                          setShowDetailsDialog(true)
-                        }}
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteCandidate(candidate.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Name</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Contact</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Status</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredCandidates.map((candidate) => (
+            <tr key={candidate.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+              <td style={{ padding: '0.75rem' }}>{candidate.first_name} {candidate.last_name}</td>
+              <td style={{ padding: '0.75rem' }}>{candidate.email}</td>
+              <td style={{ padding: '0.75rem' }}>
+                <select value={candidate.pipeline_status} onChange={(e) => handleUpdateStatus(candidate.id, e.target.value)} style={{ padding: '0.25rem', border: '1px solid #d1d5db' }}>
+                  <option>Applied</option>
+                  <option>Interviewing</option>
+                  <option>Offered</option>
+                  <option>Approved</option>
+                  <option>Denied</option>
+                </select>
+              </td>
+              <td style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => handleDeleteCandidate(candidate.id)} style={{ color: '#dc2626', border: 'none', background: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                <button onClick={() => setSelectedCandidate(candidate)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Eye size={16} /></button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      {/* Candidate Details Dialog */}
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Candidate Details</DialogTitle>
-          </DialogHeader>
-          {selectedCandidate && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Name</Label>
-                  <p className="text-sm">{selectedCandidate.first_name} {selectedCandidate.last_name}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Email</Label>
-                  <p className="text-sm">{selectedCandidate.email}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Phone</Label>
-                  <p className="text-sm">{selectedCandidate.phone || 'Not provided'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Pipeline Status</Label>
-                  <Badge className={getStatusBadge(selectedCandidate.pipeline_status)}>
-                    {selectedCandidate.pipeline_status}
-                  </Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Admin Approval</Label>
-                  <Badge className={getApprovalBadge(selectedCandidate.admin_approval)}>
-                    {selectedCandidate.admin_approval}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Indeed Status</Label>
-                  <p className="text-sm">{selectedCandidate.indeed_status || 'Not synced'}</p>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Created</Label>
-                <p className="text-sm">{new Date(selectedCandidate.created_at).toLocaleDateString()}</p>
-              </div>
-              {selectedCandidate.indeed_registration_id && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Indeed Registration ID</Label>
-                  <p className="text-sm font-mono">{selectedCandidate.indeed_registration_id}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Details View */}
+      {selectedCandidate && (
+        <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Details for {selectedCandidate.first_name}</h3>
+          <p>Email: {selectedCandidate.email}</p>
+          <p>Phone: {selectedCandidate.phone}</p>
+          <p>Status: {selectedCandidate.pipeline_status}</p>
+          <button onClick={() => setSelectedCandidate(null)} style={{ marginTop: '1rem', border: '1px solid #d1d5db', padding: '0.5rem 1rem' }}>Close</button>
+        </div>
+      )}
     </div>
   )
 }
 
 export default CandidateManagement
-
