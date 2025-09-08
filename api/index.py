@@ -28,7 +28,6 @@ def create_app():
 
     # --- Register API Blueprints ---
     # We import them here to avoid circular imports.
-    # The 'src.' prefix is important now that the files are in the src folder.
     from src.admin import admin_bp
     from src.candidate import candidate_bp
     from src.employee import employee_bp
@@ -46,6 +45,15 @@ def create_app():
     def health_check():
         return "Flask API is running!"
 
+    # --- Temporary route to initialize the database ---
+    # IMPORTANT: Change the secret_key or delete this route after use
+    @app.route("/api/init-db/a-very-secret-key-that-you-will-change")
+    def init_db():
+        with app.app_context():
+            db.create_all()
+        return "Database tables created successfully!"
+
+    # This is the correct location for the return statement
     return app
 
 # Vercel will look for a callable 'app' object.
