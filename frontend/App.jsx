@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import Navigation from './components/Navigation.jsx'
-import Dashboard from './components/Dashboard.jsx'
-import CandidateManagement from './components/CandidateManagement.jsx'
-import EmployeeManagement from './components/EmployeeManagement.jsx'
-import SimpleFileManager from './components/SimpleFileManager.jsx'
-import SimpleAdminPanel from './components/SimpleAdminPanel.jsx'
-import SimpleLogin from './components/SimpleLogin.jsx'
+import Navigation from './Navigation.jsx'
+import Dashboard from './Dashboard.jsx'
+import CandidateManagement from './CandidateManagement.jsx'
+import EmployeeManagement from './EmployeeManagement.jsx'
+import FileManager from './FileManager.jsx'
+import AdminPanel from './AdminPanel.jsx'
+import Login from './Login.jsx'
+// Assuming you have an App.css file in the frontend folder. If not, you can delete this line.
 import './App.css'
+
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
