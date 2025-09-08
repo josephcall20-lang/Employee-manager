@@ -119,3 +119,5 @@ To run the application locally, follow these steps:
 *   **Testing:** Add comprehensive unit and integration tests for both the frontend and backend.
 
 
+---
+Update to force Vercel deployment.
