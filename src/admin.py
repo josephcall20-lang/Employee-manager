@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from src.models.user import db
-from src.models.auth import AdminUser
+from models.user import db
+from models.auth import AdminUser
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -29,21 +29,17 @@ def create_user():
     try:
         data = request.get_json()
         
-        # Validate required fields
         required_fields = ['username', 'email', 'password', 'role']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # Check if username already exists
         if AdminUser.query.filter_by(username=data['username']).first():
             return jsonify({'error': 'Username already exists'}), 400
             
-        # Check if email already exists
         if AdminUser.query.filter_by(email=data['email']).first():
             return jsonify({'error': 'Email already exists'}), 400
         
-        # Hash password
         password_hash = generate_password_hash(data['password'])
         
         user = AdminUser(
@@ -76,16 +72,13 @@ def update_user(user_id):
         user = AdminUser.query.get_or_404(user_id)
         data = request.get_json()
         
-        # Update fields if provided
         if 'username' in data:
-            # Check if new username already exists (excluding current user)
             existing = AdminUser.query.filter(AdminUser.username == data['username'], AdminUser.id != user_id).first()
             if existing:
                 return jsonify({'error': 'Username already exists'}), 400
             user.username = data['username']
             
         if 'email' in data:
-            # Check if new email already exists (excluding current user)
             existing = AdminUser.query.filter(AdminUser.email == data['email'], AdminUser.id != user_id).first()
             if existing:
                 return jsonify({'error': 'Email already exists'}), 400
@@ -122,7 +115,6 @@ def delete_user(user_id):
     try:
         user = AdminUser.query.get_or_404(user_id)
         
-        # Prevent deleting the last admin user
         if user.role == 'admin':
             admin_count = AdminUser.query.filter_by(role='admin', is_active=True).count()
             if admin_count <= 1:
@@ -136,13 +128,12 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-
 @admin_bp.route('/admin/database/stats', methods=['GET'])
 def get_database_stats():
     """Get database statistics"""
     try:
-        from src.models.candidate import Candidate
-        from src.models.employee import Employee
+        from models.candidate import Candidate
+        from models.employee import Employee
         
         stats = {
             'total_candidates': Candidate.query.count(),
@@ -162,4 +153,3 @@ def get_database_stats():
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-

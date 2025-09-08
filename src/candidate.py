@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from src.models.user import db
-from src.models.candidate import Candidate
+from models.user import db
+from models.candidate import Candidate
 from datetime import datetime
 
 candidate_bp = Blueprint('candidate', __name__)
@@ -9,7 +9,6 @@ candidate_bp = Blueprint('candidate', __name__)
 def get_candidates():
     """Get all candidates with optional filtering"""
     try:
-        # Get query parameters for filtering
         pipeline_status = request.args.get('pipeline_status')
         admin_approval = request.args.get('admin_approval')
         
@@ -31,7 +30,6 @@ def create_candidate():
     try:
         data = request.get_json()
         
-        # Validate required fields
         required_fields = ['first_name', 'last_name', 'email']
         for field in required_fields:
             if field not in data:
@@ -75,7 +73,6 @@ def update_candidate(candidate_id):
         candidate = Candidate.query.get_or_404(candidate_id)
         data = request.get_json()
         
-        # Update fields if provided
         if 'first_name' in data:
             candidate.first_name = data['first_name']
         if 'last_name' in data:
@@ -169,4 +166,3 @@ def get_pipeline_stats():
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-

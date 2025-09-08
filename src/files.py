@@ -2,15 +2,14 @@ import os
 from flask import Blueprint, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from src.models.user import db
+from models.user import db
 
 files_bp = Blueprint('files', __name__)
 
-# Use absolute path for uploads
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png'}
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
+MAX_FILE_SIZE = 16 * 1024 * 1024
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -32,7 +31,6 @@ def upload_file():
         if not allowed_file(file.filename):
             return jsonify({'error': 'File type not allowed'}), 400
         
-        # Check file size
         file.seek(0, os.SEEK_END)
         file_size = file.tell()
         file.seek(0)
@@ -40,18 +38,15 @@ def upload_file():
         if file_size > MAX_FILE_SIZE:
             return jsonify({'error': 'File too large (max 16MB)'}), 400
         
-        # Create upload directory structure
         category_folder = category.lower().replace('/', '_').replace(' ', '_')
         upload_path = os.path.join(UPLOAD_FOLDER, entity_type, category_folder)
         os.makedirs(upload_path, exist_ok=True)
         
-        # Generate unique filename
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"{timestamp}_{filename}"
         file_path = os.path.join(upload_path, filename)
         
-        # Save file
         file.save(file_path)
         
         return jsonify({
@@ -98,4 +93,3 @@ def delete_file(filename):
             return jsonify({'error': 'File not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
