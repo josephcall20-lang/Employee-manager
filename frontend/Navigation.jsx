@@ -34,6 +34,22 @@ const Navigation = ({ activeTab, setActiveTab, user, onLogout }) => {
               Candidates
             </button>
             
+            <button
+              onClick={() => setActiveTab('employees')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium ${getButtonClass('employees')}`}
+            >
+              <UserCheck className="h-4 w-4" />
+              Employees
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('files')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium ${getButtonClass('files')}`}
+            >
+              <Files className="h-4 w-4" />
+              Files
+            </button>
+            
             {user && user.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('admin')}

@@ -60,7 +60,7 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <SimpleLogin onLogin={handleLogin} />
+    return <Login onLogin={handleLogin} />
   }
 
   const renderActiveComponent = () => {
@@ -72,9 +72,9 @@ function App() {
       case 'employees':
         return <EmployeeManagement token={token} user={user} />
       case 'files':
-        return <SimpleFileManager token={token} user={user} />
+        return <FileManager token={token} user={user} />
       case 'admin':
-        return user?.role === 'admin' ? <SimpleAdminPanel token={token} user={user} /> : <Dashboard token={token} user={user} />
+        return user?.role === 'admin' ? <AdminPanel token={token} user={user} /> : <Dashboard token={token} user={user} />
       default:
         return <Dashboard token={token} user={user} />
     }

@@ -19,7 +19,11 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
-    cors.init_app(app, supports_credentials=True)
+    cors.init_app(app, 
+                  supports_credentials=True,
+                  origins=['https://empmanager-rxzpd7.manus.space', 'http://localhost:3000'],
+                  allow_headers=['Content-Type', 'Authorization'],
+                  methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
     # We import them here to avoid circular imports.
     from src.admin import admin_bp
