@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models.user import db
-from models.candidate import Candidate
+from models.user import db, Candidate
 import os
 from datetime import datetime
 

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models.user import db
+from models.user import db, Candidate, Employee
 from models.auth import AdminUser
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -132,9 +132,6 @@ def delete_user(user_id):
 def get_database_stats():
     """Get database statistics"""
     try:
-        from models.candidate import Candidate
-        from models.employee import Employee
-        
         stats = {
             'total_candidates': Candidate.query.count(),
             'total_employees': Employee.query.count(),
