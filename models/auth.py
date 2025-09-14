@@ -2,8 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Import the db instance from the main app
-from api.index import db
+# Import the db instance from user models
+from .user import db
 
 class AdminUser(db.Model):
     __tablename__ = 'admin_users'

@@ -1,12 +1,12 @@
 import os
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()
 
-db = SQLAlchemy()
+# Import db from models
+from models.user import db
 cors = CORS()
 
 def create_app():

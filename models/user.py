@@ -1,8 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-# Import the db instance from the main app
-from api.index import db
+# Create db instance here to avoid circular imports
+db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__ = 'users'
