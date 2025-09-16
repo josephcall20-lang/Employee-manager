@@ -10,11 +10,12 @@ const CandidateManagement = ({ token, user }) => {
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
   const [newCandidate, setNewCandidate] = useState({
-    first_name: '',
-    last_name: '',
+    name: '',
     email: '',
     phone: '',
-    pipeline_status: 'Applied',
+    position: '',
+    status: 'pending',
+    notes: '',
   })
 
   useEffect(() => {
@@ -68,9 +69,10 @@ const CandidateManagement = ({ token, user }) => {
 
   const handleUpdateStatus = async (candidateId, newStatus) => {
     try {
-      const response = await fetch(`/api/candidates/${candidateId}`, {
+      const response = await fetch(buildApiUrl(`/api/candidates/${candidateId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ pipeline_status: newStatus }),
       })
       if (response.ok) {

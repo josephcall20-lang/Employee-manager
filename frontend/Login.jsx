@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { buildApiUrl } from './config.js'
 
 const Login = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({
@@ -14,24 +15,26 @@ const Login = ({ onLogin }) => {
     setError('')
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(buildApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(credentials),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem('auth_token', data.token)
+        // Store user data for session-based auth
         localStorage.setItem('user_data', JSON.stringify(data.user))
-        onLogin(data.user, data.token)
+        onLogin(data.user, null) // No token needed for session-based auth
       } else {
         setError(data.error || 'Login failed')
       }
     } catch (error) {
+      console.error('Login error:', error)
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)
