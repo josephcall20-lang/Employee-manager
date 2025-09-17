@@ -29,23 +29,18 @@ def create_candidate():
     try:
         data = request.get_json()
         
-        required_fields = ['first_name', 'last_name', 'email']
+        required_fields = ['name', 'email']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
         candidate = Candidate(
-            first_name=data['first_name'],
-            last_name=data['last_name'],
+            name=data['name'],
             email=data['email'],
             phone=data.get('phone'),
-            resume_path=data.get('resume_path'),
-            pipeline_status=data.get('pipeline_status', 'Applied'),
-            admin_approval=data.get('admin_approval', 'Pending'),
-            indeed_registration_id=data.get('indeed_registration_id'),
-            ats_candidate_id=data.get('ats_candidate_id'),
-            ats_application_id=data.get('ats_application_id'),
-            indeed_status=data.get('indeed_status')
+            position=data.get('position'),
+            status=data.get('status', 'Applied'),
+            notes=data.get('notes')
         )
         
         db.session.add(candidate)
